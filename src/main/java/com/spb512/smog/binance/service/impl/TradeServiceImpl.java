@@ -1,6 +1,9 @@
 package com.spb512.smog.binance.service.impl;
 
+import com.alibaba.fastjson2.JSONObject;
 import com.binance.client.SyncRequestClient;
+import com.binance.client.exception.BinanceApiException;
+import com.binance.client.model.ResponseResult;
 import com.binance.client.model.enums.*;
 import com.binance.client.model.market.Candlestick;
 import com.binance.client.model.market.ExchangeInfoEntry;
@@ -118,7 +121,7 @@ public class TradeServiceImpl implements TradeService {
     /**
      * 收益率激活
      */
-    private double activateRatio = 0.03;
+    private double activateRatio = 0.02;
     /**
      * 回调收益率
      */
@@ -135,19 +138,27 @@ public class TradeServiceImpl implements TradeService {
     public void init(){
         publicClient = getClient.getPublicClient();
         privateClient = getClient.getPrivateClient();
-//        //初始化持仓模式
-//        ResponseResult result = privateClient.changePositionSide(dual);
-//        if (result.getCode() == 200){
-//            logger.info("初始化持仓模式为{}成功", dual);
-//        }
+        //初始化持仓模式
+        try {
+            ResponseResult result = privateClient.changePositionSide(dual);
+            if (result.getCode() == 200){
+                logger.info("初始化持仓模式为{}成功", dual);
+            }
+        } catch (BinanceApiException e) {
+            logger.info(e.getMessage());
+        }
         //初始化倍数
         Leverage leverageResult = privateClient.changeInitialLeverage(symbolNam, leverage);
         logger.info("初始化杠杆倍数为{}成功", leverageResult.getLeverage());
-//        //初始化保证金模式
-//        ResponseResult marginTypeResult = privateClient.changeMarginType(symbolNam, marginType);
-//        if (marginTypeResult.getCode() == 200){
-//            logger.info("初始化保证金模式为{}成功", marginType);
-//        }
+        //初始化保证金模式
+        try {
+            ResponseResult marginTypeResult = privateClient.changeMarginType(symbolNam, marginType);
+            if (marginTypeResult.getCode() == 200){
+                logger.info("初始化保证金模式为{}成功", marginType);
+            }
+        } catch (BinanceApiException e) {
+            logger.info(e.getMessage());
+        }
         //初始化市价交易单次最大买和卖的数量
         ExchangeInformation exchangeInformation = publicClient.getExchangeInformation();
         List<ExchangeInfoEntry> symbols = exchangeInformation.getSymbols();
@@ -171,7 +182,8 @@ public class TradeServiceImpl implements TradeService {
         List<Candlestick> candlestickList = publicClient.getMarkPriceCandlesticks(symbolNam, interval, null, null, limit);
         IndicatorDto indicatorDto = getIndicators(candlestickList);
         double rsi12 = indicatorDto.getRsi12();
-//        logger.info("rsi12:{}", rsi12);
+//        logger.info("currentPrice:{}", candlestickList.get(candlestickList.size() - 1).getClose());
+//        logger.info("rsi12:{},highestHighRsi:{},lowestLowRsi{}", rsi12,highestHighRsi,lowestLowRsi);
         if ((rsi12 > activateHighRsi12) && (rsi12 > highestHighRsi)) {
             highestHighRsi = rsi12;
             logger.info("highestHighRsi更新，当前为:{}", highestHighRsi);
@@ -210,7 +222,7 @@ public class TradeServiceImpl implements TradeService {
             BigDecimal currentPrice = candlestickList.get( candlestickList.size() - 1).getClose();
             logger.info("当前余额:{}",availableBalance);
             logger.info("当前价格:{}",currentPrice);
-            BigDecimal quantity = availableBalance.divide(currentPrice, 3, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(leverage)).multiply(BigDecimal.valueOf(0.1));
+            BigDecimal quantity = availableBalance.divide(currentPrice, 3, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(leverage)).multiply(BigDecimal.valueOf(0.9));
             logger.info("下单数量{}", quantity);
             //下单
             OrderSide sid = OrderSide.BUY;
@@ -258,7 +270,10 @@ public class TradeServiceImpl implements TradeService {
         IndicatorDto indicatorDto = getIndicators(candlestickList);
         double rsi12 = indicatorDto.getRsi12();
         PositionRisk positionRisk = positionRiskList.get(0);
-        BigDecimal uplRatio = positionRisk.getUnrealizedProfit().divide(new BigDecimal(positionRisk.getIsolatedMargin()), 2, RoundingMode.HALF_UP);
+        BigDecimal unrealizedProfit = positionRisk.getUnrealizedProfit();
+        BigDecimal isolatedMargin = new BigDecimal(positionRisk.getIsolatedMargin());
+        BigDecimal isolated = isolatedMargin.subtract(unrealizedProfit);
+        BigDecimal uplRatio = unrealizedProfit.divide(isolated, 2, RoundingMode.HALF_UP);
 //        logger.info("UnrealizedProfit:{};uplRatio:{}",positionRisk.getUnrealizedProfit(), uplRatio);
         if ((uplRatio.compareTo(BigDecimal.valueOf(activateRatio)) > -1) && (uplRatio.compareTo(highestUplRatio) > 0)) {
             highestUplRatio = uplRatio;
@@ -282,7 +297,10 @@ public class TradeServiceImpl implements TradeService {
             return;
         }
         PositionRisk positionRisk = positionRiskList.get(0);
-        BigDecimal uplRatio = positionRisk.getUnrealizedProfit().divide(new BigDecimal(positionRisk.getIsolatedMargin()), 2, RoundingMode.HALF_UP);
+        BigDecimal unrealizedProfit = positionRisk.getUnrealizedProfit();
+        BigDecimal isolatedMargin = new BigDecimal(positionRisk.getIsolatedMargin());
+        BigDecimal isolated = isolatedMargin.subtract(unrealizedProfit);
+        BigDecimal uplRatio = unrealizedProfit.divide(isolated, 2, RoundingMode.HALF_UP);
         if (uplRatio.compareTo(BigDecimal.valueOf(stopLossLine)) < 0) {
             logger.info("达到强制止损线{}%", stopLossLine * 100);
             Order order = sell(positionRisk);
