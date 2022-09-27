@@ -67,6 +67,7 @@
         </profile>
     </profiles>
     <build>
+        <finalName>smog-binance</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

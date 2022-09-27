@@ -73,11 +73,11 @@ public class TradeServiceImpl implements TradeService {
     /**
      * rsi12做空激活点
      */
-    private double activateHighRsi12 = 55;
+    private double activateHighRsi12 = 80;
     /**
      * rsi12做多激活点
      */
-    private double activateLowRsi12 = 45;
+    private double activateLowRsi12 = 20;
     /**
      * 最高做空点
      */
@@ -129,7 +129,7 @@ public class TradeServiceImpl implements TradeService {
     /**
      * 强制止损线
      */
-    private double stopLossLine = -0.25;
+    private double stopLossLine = -0.05;
     /**
      * 持仓模式："true": 双向持仓模式；"false": 单向持仓模式
      */
@@ -222,7 +222,7 @@ public class TradeServiceImpl implements TradeService {
             BigDecimal currentPrice = candlestickList.get( candlestickList.size() - 1).getClose();
             logger.info("当前余额:{}",availableBalance);
             logger.info("当前价格:{}",currentPrice);
-            BigDecimal quantity = availableBalance.divide(currentPrice, 3, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(leverage)).multiply(BigDecimal.valueOf(0.9));
+            BigDecimal quantity = availableBalance.divide(currentPrice, 3, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(leverage)).multiply(BigDecimal.valueOf(0.2));
             logger.info("下单数量{}", quantity);
             //下单
             OrderSide sid = OrderSide.BUY;
