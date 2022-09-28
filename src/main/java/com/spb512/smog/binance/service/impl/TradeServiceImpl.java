@@ -105,7 +105,7 @@ public class TradeServiceImpl implements TradeService {
     /**
      * 最小开仓资金
      */
-    private BigDecimal minStartup = BigDecimal.valueOf(15);
+    private BigDecimal minStartup = BigDecimal.valueOf(10);
     /**
      * 可用余额
      */
@@ -121,7 +121,7 @@ public class TradeServiceImpl implements TradeService {
     /**
      * 收益率激活
      */
-    private double activateRatio = 0.02;
+    private double activateRatio = 0.05;
     /**
      * 回调收益率
      */
@@ -129,7 +129,7 @@ public class TradeServiceImpl implements TradeService {
     /**
      * 强制止损线
      */
-    private double stopLossLine = -0.05;
+    private double stopLossLine = -0.10;
     /**
      * 持仓模式："true": 双向持仓模式；"false": 单向持仓模式
      */
@@ -213,6 +213,8 @@ public class TradeServiceImpl implements TradeService {
                 if("USDT".equals(accountBalance.getAsset())){
                     availableBalance = accountBalance.getAvailableBalance();
                     if (availableBalance.compareTo(minStartup) < 0){
+                        doBuy = false;
+                        doSell = false;
                         logger.info("账号余额:{},余额过低小于{}", availableBalance, minStartup);
                         return;
                     }
@@ -222,7 +224,7 @@ public class TradeServiceImpl implements TradeService {
             BigDecimal currentPrice = candlestickList.get( candlestickList.size() - 1).getClose();
             logger.info("当前余额:{}",availableBalance);
             logger.info("当前价格:{}",currentPrice);
-            BigDecimal quantity = availableBalance.divide(currentPrice, 3, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(leverage)).multiply(BigDecimal.valueOf(0.2));
+            BigDecimal quantity = availableBalance.divide(currentPrice, 3, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(leverage)).multiply(BigDecimal.valueOf(0.5));
             logger.info("下单数量{}", quantity);
             //下单
             OrderSide sid = OrderSide.BUY;
@@ -318,6 +320,7 @@ public class TradeServiceImpl implements TradeService {
             side = OrderSide.BUY;
         }
         Order order = privateClient.postOrder(symbolNam, side, null, OrderType.MARKET, null, positionAmt.abs().toString(), null, null, null, null, null, null, null, null, null, NewOrderRespType.RESULT);
+        highestUplRatio = BigDecimal.ZERO;
         if (order.getOrderId() != null){
             isPosition = false;
         }
