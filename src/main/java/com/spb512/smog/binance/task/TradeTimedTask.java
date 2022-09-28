@@ -32,8 +32,8 @@ public class TradeTimedTask {
      */
     @Scheduled(cron = "0/1 * * * * ?")
     public void openPositionTask() {
-        tradeService.openPosition();
         try {
+            tradeService.openPosition();
         } catch (BinanceApiException e) {
             logger.info("开仓任务捕获api异常:{}", e.getMessage());
         }
@@ -44,8 +44,8 @@ public class TradeTimedTask {
      */
     @Scheduled(cron = "0/1 * * * * ?")
     public void closePositionTask() {
-        tradeService.closePosition();
         try {
+            tradeService.closePosition();
         } catch (BinanceApiException e) {
             logger.info("平仓任务捕获api异常:{}", e.getMessage());
         }
@@ -56,8 +56,8 @@ public class TradeTimedTask {
      */
     @Scheduled(cron = "0/1 * * * * ?")
     public void checkPositionTask() {
-        tradeService.checkPosition();
         try {
+            tradeService.checkPosition();
         } catch (BinanceApiException e) {
             logger.info("止损任务捕获api异常:{}", e.getMessage());
         }
