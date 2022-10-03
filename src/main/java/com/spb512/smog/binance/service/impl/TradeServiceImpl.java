@@ -236,9 +236,7 @@ public class TradeServiceImpl implements TradeService {
                 doBuy = false;
                 doSell = false;
             }
-            //查询更新余额变量
-            getBalance();
-            logger.info("开{}仓,订单号ordId:{}=======>当前余额:{}", direction, order.getOrderId(), availableBalance);
+            logger.info("开{}仓,订单号ordId:{};当前余额:{}", direction, order.getOrderId(), availableBalance);
         }
     }
 
@@ -310,6 +308,8 @@ public class TradeServiceImpl implements TradeService {
         if (uplRatio.compareTo(BigDecimal.valueOf(stopLossLine)) < 0) {
             logger.info("达到强制止损线{}%", stopLossLine * 100);
             Order order = sell(positionRisk);
+            //查询更新余额变量
+            getBalance();
             logger.info("止损平仓成功,订单号ordId:{};收益率为:{};当前余额:{}", order.getOrderId(), uplRatio, availableBalance);
             logger.info("<=====================分隔符=======================>");
         }
