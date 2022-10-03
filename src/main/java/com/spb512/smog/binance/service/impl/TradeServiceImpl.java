@@ -167,7 +167,7 @@ public class TradeServiceImpl implements TradeService {
                 List<List<Map<String, String>>> filters = exchangeInfoEntry.getFilters();
                 List<Map<String, String>> mapList = filters.get(2);
                 maxQty = mapList.get(2).get("maxQty");
-                logger.info("初始化市价交易单次最大买和卖的数量为{}成功" + maxQty);
+                logger.info("初始化市价交易单次最大买和卖的数量为{}成功", maxQty);
             }
         }
         //初始化持仓标记
@@ -276,7 +276,7 @@ public class TradeServiceImpl implements TradeService {
         BigDecimal unrealizedProfit = positionRisk.getUnrealizedProfit();
         BigDecimal isolatedMargin = new BigDecimal(positionRisk.getIsolatedMargin());
         BigDecimal isolated = isolatedMargin.subtract(unrealizedProfit);
-        BigDecimal uplRatio = unrealizedProfit.divide(isolated, 2, RoundingMode.HALF_UP);
+        BigDecimal uplRatio = unrealizedProfit.divide(isolated, 16, RoundingMode.HALF_UP);
         if ((uplRatio.compareTo(BigDecimal.valueOf(activateRatio)) > -1) && (uplRatio.compareTo(highestUplRatio) > 0)) {
             highestUplRatio = uplRatio;
             logger.info("highestUplRatio更新，当前为:{}", highestUplRatio);
@@ -304,7 +304,7 @@ public class TradeServiceImpl implements TradeService {
         BigDecimal unrealizedProfit = positionRisk.getUnrealizedProfit();
         BigDecimal isolatedMargin = new BigDecimal(positionRisk.getIsolatedMargin());
         BigDecimal isolated = isolatedMargin.subtract(unrealizedProfit);
-        BigDecimal uplRatio = unrealizedProfit.divide(isolated, 2, RoundingMode.HALF_UP);
+        BigDecimal uplRatio = unrealizedProfit.divide(isolated, 16, RoundingMode.HALF_UP);
         if (uplRatio.compareTo(BigDecimal.valueOf(stopLossLine)) < 0) {
             logger.info("达到强制止损线{}%", stopLossLine * 100);
             Order order = sell(positionRisk);
