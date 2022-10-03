@@ -142,7 +142,7 @@ public class TradeServiceImpl implements TradeService {
         try {
             ResponseResult result = privateClient.changePositionSide(dual);
             if (result.getCode() == 200) {
-                logger.info("初始化持仓模式为{}成功", dual);
+                logger.info("初始化持仓模式为单向持仓成功");
             }
         } catch (BinanceApiException e) {
             logger.info(e.getMessage());
@@ -154,7 +154,7 @@ public class TradeServiceImpl implements TradeService {
         try {
             ResponseResult marginTypeResult = privateClient.changeMarginType(symbolNam, marginType);
             if (marginTypeResult.getCode() == 200) {
-                logger.info("初始化保证金模式为{}成功", marginType);
+                logger.info("初始化保证金模式为逐仓成功");
             }
         } catch (BinanceApiException e) {
             logger.info(e.getMessage());
@@ -167,14 +167,14 @@ public class TradeServiceImpl implements TradeService {
                 List<List<Map<String, String>>> filters = exchangeInfoEntry.getFilters();
                 List<Map<String, String>> mapList = filters.get(2);
                 maxQty = mapList.get(2).get("maxQty");
-                logger.info("市价最大开仓数量:" + maxQty);
+                logger.info("初始化市价交易单次最大买和卖的数量为{}成功" + maxQty);
             }
         }
         //初始化持仓标记
         List<PositionRisk> positionRiskList = privateClient.getPositionRisk(symbolNam);
         if (positionRiskList.get(0).getPositionAmt().doubleValue() > 0) {
             isPosition = true;
-            logger.info("当前有持仓，初始化持仓标记isPosition为{}成功", isPosition);
+            logger.info("当前有持仓，初始化持仓标记isPosition为true成功");
         }
     }
 
