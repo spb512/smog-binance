@@ -37,26 +37,6 @@ import java.util.Map;
 @Service
 public class TradeServiceImpl implements TradeService {
     Logger logger = LoggerFactory.getLogger(getClass());
-    @Resource
-    private GetClient getClient;
-    @Resource
-    private FinStratModel finModel;
-    private SyncRequestClient publicClient;
-    private SyncRequestClient privateClient;
-
-    /**
-     * 交易对
-     */
-    private String symbolNam = "BTCUSDT";
-    /**
-     * 杠杆倍数
-     */
-    private Integer leverage = 10;
-
-    /**
-     * 保证金模式：逐仓或全仓
-     */
-    private MarginType marginType = MarginType.ISOLATED;
     /**
      * 时间间隔
      */
@@ -65,6 +45,28 @@ public class TradeServiceImpl implements TradeService {
      * 限制
      */
     Integer limit = 250;
+    /**
+     * 持仓模式："true": 双向持仓模式；"false": 单向持仓模式
+     */
+    String dual = "false";
+    @Resource
+    private GetClient getClient;
+    @Resource
+    private FinStratModel finModel;
+    private SyncRequestClient publicClient;
+    private SyncRequestClient privateClient;
+    /**
+     * 交易对
+     */
+    private String symbolNam = "BTCUSDT";
+    /**
+     * 杠杆倍数
+     */
+    private Integer leverage = 10;
+    /**
+     * 保证金模式：逐仓或全仓
+     */
+    private MarginType marginType = MarginType.ISOLATED;
     /**
      * 收盘价数组
      */
@@ -129,10 +131,15 @@ public class TradeServiceImpl implements TradeService {
      * 强制止损线
      */
     private double stopLossLine = -0.08;
-    /**
-     * 持仓模式："true": 双向持仓模式；"false": 单向持仓模式
-     */
-    String dual = "false";
+
+    @NotNull
+    private static BigDecimal getUplRatio(PositionRisk positionRisk) {
+        BigDecimal unrealizedProfit = positionRisk.getUnrealizedProfit();
+        BigDecimal isolatedMargin = new BigDecimal(positionRisk.getIsolatedMargin());
+        BigDecimal isolated = isolatedMargin.subtract(unrealizedProfit);
+        BigDecimal uplRatio = unrealizedProfit.divide(isolated, 16, RoundingMode.HALF_UP);
+        return uplRatio;
+    }
 
     @PostConstruct
     public void init() {
@@ -220,7 +227,7 @@ public class TradeServiceImpl implements TradeService {
             //计算开仓数量
             BigDecimal currentPrice = candlestickList.get(candlestickList.size() - 1).getClose();
             BigDecimal quantity = availableBalance.divide(currentPrice, 3, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(leverage)).multiply(BigDecimal.valueOf(0.7));
-            logger.info("当前价格:{};当前余额:{};下单数量{}", currentPrice, availableBalance, quantity);
+            logger.info("当前价格:{};下单数量{}", currentPrice, quantity);
             //下单
             OrderSide sid = OrderSide.BUY;
             String direction = "做多";
@@ -236,17 +243,69 @@ public class TradeServiceImpl implements TradeService {
                 doBuy = false;
                 doSell = false;
             }
-            logger.info("开{}仓,订单号ordId:{};当前余额:{}", direction, order.getOrderId(), availableBalance);
+            logger.info("开{}仓成功,订单号ordId:{};当前余额:{}", direction, order.getOrderId(), availableBalance);
         }
     }
 
-    private void getBalance() {
-        List<AccountBalance> balanceList = privateClient.getBalance();
-        for (AccountBalance accountBalance : balanceList) {
-            if ("USDT".equals(accountBalance.getAsset())) {
-                availableBalance = accountBalance.getAvailableBalance();
-                return;
-            }
+    @Override
+    public synchronized void closePosition() {
+        // 当前是否有持仓
+        if (!isPosition) {
+            return;
+        }
+        List<PositionRisk> positionRiskList = privateClient.getPositionRisk(symbolNam);
+        if (positionRiskList.get(0).getPositionAmt().doubleValue() == 0) {
+            return;
+        }
+        PositionRisk positionRisk = positionRiskList.get(0);
+        BigDecimal uplRatio = getUplRatio(positionRisk);
+        if ((uplRatio.compareTo(BigDecimal.valueOf(activateRatio)) > -1) && (uplRatio.compareTo(highestUplRatio) > 0)) {
+            highestUplRatio = uplRatio;
+            logger.info("highestUplRatio更新，当前为:{}", highestUplRatio);
+        }
+        if ((highestUplRatio.compareTo(BigDecimal.valueOf(activateRatio)) > -1) && (uplRatio.compareTo(highestUplRatio.subtract(BigDecimal.valueOf(pullbackRatio))) < 1)) {
+            sell(positionRisk, uplRatio);
+        }
+    }
+
+    @Override
+    public synchronized void checkPosition() {
+        // 当前是否有持仓
+        if (!isPosition) {
+            return;
+        }
+        List<PositionRisk> positionRiskList = privateClient.getPositionRisk(symbolNam);
+        if (positionRiskList.get(0).getPositionAmt().doubleValue() == 0) {
+            return;
+        }
+        PositionRisk positionRisk = positionRiskList.get(0);
+        BigDecimal uplRatio = getUplRatio(positionRisk);
+        if (uplRatio.compareTo(BigDecimal.valueOf(stopLossLine)) < 0) {
+            logger.info("达到强制止损线{}%", stopLossLine * 100);
+            sell(positionRisk, uplRatio);
+        }
+    }
+
+    private void sell(@NotNull PositionRisk positionRisk, BigDecimal uplRatio) {
+        BigDecimal positionAmt = positionRisk.getPositionAmt();
+        OrderSide side;
+        String direction;
+        if (positionAmt.doubleValue() > 0) {
+            side = OrderSide.SELL;
+            direction = "做多";
+        } else {
+            side = OrderSide.BUY;
+            direction = "做空";
+        }
+        Order order = privateClient.postOrder(symbolNam, side, null, OrderType.MARKET, null, positionAmt.abs().toString(), null, null, null, null, null, null, null, null, null, NewOrderRespType.RESULT);
+        highestUplRatio = BigDecimal.ZERO;
+        if (order.getOrderId() != null) {
+            isPosition = false;
+            //查询更新余额变量
+            getBalance();
+            logger.info("当前价格:{};当前收益率:{}", positionRisk.getMarkPrice(), uplRatio);
+            logger.info("平{}仓成功,订单号ordId:{};当前余额:{}", direction, order.getOrderId(), availableBalance);
+            logger.info("<=====================分隔符=======================>");
         }
     }
 
@@ -262,72 +321,13 @@ public class TradeServiceImpl implements TradeService {
         return indicatorDto;
     }
 
-    @Override
-    public synchronized void closePosition() {
-        // 当前是否有持仓
-        if (!isPosition) {
-            return;
+    private void getBalance() {
+        List<AccountBalance> balanceList = privateClient.getBalance();
+        for (AccountBalance accountBalance : balanceList) {
+            if ("USDT".equals(accountBalance.getAsset())) {
+                availableBalance = accountBalance.getAvailableBalance();
+                return;
+            }
         }
-        List<PositionRisk> positionRiskList = privateClient.getPositionRisk(symbolNam);
-        if (positionRiskList.get(0).getPositionAmt().doubleValue() == 0) {
-            return;
-        }
-        PositionRisk positionRisk = positionRiskList.get(0);
-        BigDecimal unrealizedProfit = positionRisk.getUnrealizedProfit();
-        BigDecimal isolatedMargin = new BigDecimal(positionRisk.getIsolatedMargin());
-        BigDecimal isolated = isolatedMargin.subtract(unrealizedProfit);
-        BigDecimal uplRatio = unrealizedProfit.divide(isolated, 16, RoundingMode.HALF_UP);
-        if ((uplRatio.compareTo(BigDecimal.valueOf(activateRatio)) > -1) && (uplRatio.compareTo(highestUplRatio) > 0)) {
-            highestUplRatio = uplRatio;
-            logger.info("highestUplRatio更新，当前为:{}", highestUplRatio);
-        }
-        if ((highestUplRatio.compareTo(BigDecimal.valueOf(activateRatio)) > -1) && (uplRatio.compareTo(highestUplRatio.subtract(BigDecimal.valueOf(pullbackRatio))) < 1)) {
-            Order order = sell(positionRisk);
-            //查询更新余额变量
-            getBalance();
-            logger.info("平仓成功,订单号ordId:{};收益率为:{};当前余额:{}", order.getOrderId(), uplRatio, availableBalance);
-            logger.info("<=====================分隔符=======================>");
-        }
-    }
-
-    @Override
-    public synchronized void checkPosition() {
-        // 当前是否有持仓
-        if (!isPosition) {
-            return;
-        }
-        List<PositionRisk> positionRiskList = privateClient.getPositionRisk(symbolNam);
-        if (positionRiskList.get(0).getPositionAmt().doubleValue() == 0) {
-            return;
-        }
-        PositionRisk positionRisk = positionRiskList.get(0);
-        BigDecimal unrealizedProfit = positionRisk.getUnrealizedProfit();
-        BigDecimal isolatedMargin = new BigDecimal(positionRisk.getIsolatedMargin());
-        BigDecimal isolated = isolatedMargin.subtract(unrealizedProfit);
-        BigDecimal uplRatio = unrealizedProfit.divide(isolated, 16, RoundingMode.HALF_UP);
-        if (uplRatio.compareTo(BigDecimal.valueOf(stopLossLine)) < 0) {
-            logger.info("达到强制止损线{}%", stopLossLine * 100);
-            Order order = sell(positionRisk);
-            //查询更新余额变量
-            getBalance();
-            logger.info("止损平仓成功,订单号ordId:{};收益率为:{};当前余额:{}", order.getOrderId(), uplRatio, availableBalance);
-            logger.info("<=====================分隔符=======================>");
-        }
-    }
-
-    private Order sell(PositionRisk positionRisk) {
-        BigDecimal positionAmt = positionRisk.getPositionAmt();
-        OrderSide side;
-        if (positionAmt.doubleValue() > 0) {
-            side = OrderSide.SELL;
-        } else {
-            side = OrderSide.BUY;
-        }
-        Order order = privateClient.postOrder(symbolNam, side, null, OrderType.MARKET, null, positionAmt.abs().toString(), null, null, null, null, null, null, null, null, null, NewOrderRespType.RESULT);
-        highestUplRatio = BigDecimal.ZERO;
-        if (order.getOrderId() != null) {
-            isPosition = false;
-        }
-        return order;
     }
 }

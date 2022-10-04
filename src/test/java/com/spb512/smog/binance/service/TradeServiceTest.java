@@ -7,6 +7,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 
 import javax.annotation.Resource;
+
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @WebAppConfiguration

@@ -27,6 +27,7 @@ public class TradeTimedTask {
 
     @Resource
     private TradeService tradeService;
+
     /**
      * 开仓任务,每1秒执行一次
      */

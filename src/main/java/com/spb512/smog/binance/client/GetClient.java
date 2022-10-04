@@ -24,19 +24,19 @@ public class GetClient {
     private SyncRequestClient privateClient;
 
     public SyncRequestClient getPublicClient() {
-        if (publicClient == null){
+        if (publicClient == null) {
             RequestOptions options = new RequestOptions();
             options.setUrl(apiBaseUrl);
-            publicClient =SyncRequestClient.create(null, null, options);
+            publicClient = SyncRequestClient.create(null, null, options);
         }
         return publicClient;
     }
 
     public SyncRequestClient getPrivateClient() {
-        if (privateClient == null){
+        if (privateClient == null) {
             RequestOptions options = new RequestOptions();
             options.setUrl(apiBaseUrl);
-            privateClient =SyncRequestClient.create(apiKey, secretKey, options);
+            privateClient = SyncRequestClient.create(apiKey, secretKey, options);
         }
         return privateClient;
     }
