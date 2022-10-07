@@ -122,7 +122,7 @@ public class TradeServiceImpl implements TradeService {
     /**
      * 收益率激活
      */
-    private double activateRatio = 0.06;
+    private double activateRatio = 0.0618;
     /**
      * 回调收益率
      */
@@ -130,7 +130,7 @@ public class TradeServiceImpl implements TradeService {
     /**
      * 强制止损线
      */
-    private double stopLossLine = -0.08;
+    private double stopLossLine = -0.075;
 
     @NotNull
     private static BigDecimal getUplRatio(PositionRisk positionRisk) {
@@ -303,7 +303,7 @@ public class TradeServiceImpl implements TradeService {
             isPosition = false;
             //查询更新余额变量
             getBalance();
-            logger.info("当前价格:{};当前收益率:{}", positionRisk.getMarkPrice(), uplRatio);
+            logger.info("开仓均价:{};当前价格:{};当前收益率:{}", positionRisk.getEntryPrice(), positionRisk.getMarkPrice(), uplRatio);
             logger.info("平{}仓成功,订单号ordId:{};当前余额:{}", direction, order.getOrderId(), availableBalance);
             logger.info("<=====================分隔符=======================>");
         }
