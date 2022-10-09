@@ -122,7 +122,7 @@ public class TradeServiceImpl implements TradeService {
     /**
      * 收益率激活
      */
-    private double activateRatio = 0.0618;
+    private double activateRatio = 0.0512;
     /**
      * 回调收益率
      */
@@ -130,7 +130,7 @@ public class TradeServiceImpl implements TradeService {
     /**
      * 强制止损线
      */
-    private double stopLossLine = -0.075;
+    private double stopLossLine = -0.065;
 
     @NotNull
     private static BigDecimal getUplRatio(PositionRisk positionRisk) {
