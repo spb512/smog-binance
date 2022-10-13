@@ -74,11 +74,11 @@ public class TradeServiceImpl implements TradeService {
     /**
      * rsi12做空激活点
      */
-    private double activateHighRsi12 = 80;
+    private double activateHighRsi12 = 81;
     /**
      * rsi12做多激活点
      */
-    private double activateLowRsi12 = 20;
+    private double activateLowRsi12 = 19;
     /**
      * 激活区间
      */
@@ -206,6 +206,8 @@ public class TradeServiceImpl implements TradeService {
         boolean highActive = (highestHighRsi > activateHighRsi12) && (highestHighRsi < (activateHighRsi12 + activateRange));
         if (highActive && (highestHighRsi - rsi12 > pullbackRsi)) {
             doSell = true;
+        } else {
+            highestHighRsi = 0;
         }
 
         if ((rsi12 < activateLowRsi12) && (rsi12 < lowestLowRsi)) {
@@ -215,6 +217,8 @@ public class TradeServiceImpl implements TradeService {
         boolean lowActive = (lowestLowRsi < activateLowRsi12) && (lowestLowRsi > (activateLowRsi12 - activateRange));
         if (lowActive && (rsi12 - lowestLowRsi > pullbackRsi)) {
             doBuy = true;
+        } else {
+            lowestLowRsi = 100;
         }
         if (doBuy || doSell) {
             //再次确认是否有持仓
