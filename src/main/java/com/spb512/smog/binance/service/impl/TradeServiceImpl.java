@@ -80,6 +80,10 @@ public class TradeServiceImpl implements TradeService {
      */
     private double activateLowRsi12 = 20;
     /**
+     * 激活区间
+     */
+    private double activateRange = 2;
+    /**
      * 最高做空点
      */
     private double highestHighRsi = 0;
@@ -130,7 +134,7 @@ public class TradeServiceImpl implements TradeService {
     /**
      * 强制止损线
      */
-    private double stopLossLine = -0.065;
+    private double stopLossLine = -0.0618;
 
     @NotNull
     private static BigDecimal getUplRatio(PositionRisk positionRisk) {
@@ -199,7 +203,8 @@ public class TradeServiceImpl implements TradeService {
             highestHighRsi = rsi12;
             logger.info("highestHighRsi更新，当前为:{}", highestHighRsi);
         }
-        if ((highestHighRsi > activateHighRsi12) && (highestHighRsi - rsi12 > pullbackRsi)) {
+        boolean highActive = (highestHighRsi > activateHighRsi12) && (highestHighRsi < (activateHighRsi12 + activateRange));
+        if (highActive && (highestHighRsi - rsi12 > pullbackRsi)) {
             doSell = true;
         }
 
@@ -207,11 +212,11 @@ public class TradeServiceImpl implements TradeService {
             lowestLowRsi = rsi12;
             logger.info("lowestLowRsi更新，当前为:{}", lowestLowRsi);
         }
-        if ((lowestLowRsi < activateLowRsi12) && (rsi12 - lowestLowRsi > pullbackRsi)) {
+        boolean lowActive = (lowestLowRsi < activateLowRsi12) && (lowestLowRsi > (activateLowRsi12 - activateRange));
+        if (lowActive && (rsi12 - lowestLowRsi > pullbackRsi)) {
             doBuy = true;
         }
         if (doBuy || doSell) {
-//        if (false) {
             //再次确认是否有持仓
             List<PositionRisk> positionRiskList = privateClient.getPositionRisk(symbolNam);
             if (positionRiskList.get(0).getPositionAmt().doubleValue() > 0) {
