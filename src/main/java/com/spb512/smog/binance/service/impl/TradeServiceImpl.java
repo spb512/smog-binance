@@ -74,27 +74,15 @@ public class TradeServiceImpl implements TradeService {
     /**
      * rsi12做空激活点
      */
-    private double activateHighRsi12 = 81;
+    private double activateHighRsi12 = 82;
     /**
      * rsi12做多激活点
      */
-    private double activateLowRsi12 = 19;
+    private double activateLowRsi12 = 18;
     /**
      * 激活区间
      */
     private double activateRange = 2;
-//    /**
-//     * 最高做空点
-//     */
-//    private double highestHighRsi = 0;
-//    /**
-//     * 最低做空点
-//     */
-//    private double lowestLowRsi = 100;
-//    /**
-//     * 回调幅度
-//     */
-//    private double pullbackRsi = 0.01;
     /**
      * 做多
      */
@@ -126,15 +114,15 @@ public class TradeServiceImpl implements TradeService {
     /**
      * 收益率激活
      */
-    private double activateRatio = 0.0512;
+    private final double activateRatio = 0.0512;
     /**
      * 回调收益率
      */
-    private double pullbackRatio = 0.001;
+    private final double pullbackRatio = 0.001;
     /**
      * 强制止损线
      */
-    private double stopLossLine = -0.0618;
+    private final double stopLossLine = -0.0618;
 
     @NotNull
     private static BigDecimal getUplRatio(PositionRisk positionRisk) {
@@ -199,19 +187,12 @@ public class TradeServiceImpl implements TradeService {
         List<Candlestick> candlestickList = publicClient.getMarkPriceCandlesticks(symbolNam, interval, null, null, limit);
         IndicatorDto indicatorDto = getIndicators(candlestickList);
         double rsi12 = indicatorDto.getRsi12();
-//        if ((rsi12 > activateHighRsi12) && (rsi12 > highestHighRsi)) {
-//            highestHighRsi = rsi12;
-//            logger.info("highestHighRsi更新，当前为:{}", highestHighRsi);
-//        }
+
         boolean highActive = (rsi12 > activateHighRsi12) && (rsi12 < (activateHighRsi12 + activateRange));
         if (highActive) {
             doSell = true;
         }
 
-//        if ((rsi12 < activateLowRsi12) && (rsi12 < lowestLowRsi)) {
-//            lowestLowRsi = rsi12;
-//            logger.info("lowestLowRsi更新，当前为:{}", lowestLowRsi);
-//        }
         boolean lowActive = (rsi12 < activateLowRsi12) && (rsi12 > (activateLowRsi12 - activateRange));
         if (lowActive) {
             doBuy = true;
@@ -243,8 +224,6 @@ public class TradeServiceImpl implements TradeService {
             Order order = privateClient.postOrder(symbolNam, sid, null, OrderType.MARKET, null, String.valueOf(quantity), null, null, null, null, null, null, null, null, null, NewOrderRespType.RESULT);
             if (order.getOrderId() != null) {
                 isPosition = true;
-//                lowestLowRsi = 100;
-//                highestHighRsi = 0;
                 doBuy = false;
                 doSell = false;
             }
