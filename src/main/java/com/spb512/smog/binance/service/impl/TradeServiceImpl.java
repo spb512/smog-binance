@@ -74,11 +74,11 @@ public class TradeServiceImpl implements TradeService {
     /**
      * rsi12做空激活点
      */
-    private double activateHighRsi12 = 82.5;
+    private double activateHighRsi12 = 83;
     /**
      * rsi12做多激活点
      */
-    private double activateLowRsi12 = 17.5;
+    private double activateLowRsi12 = 17;
     /**
      * 激活区间
      */
@@ -122,7 +122,7 @@ public class TradeServiceImpl implements TradeService {
     /**
      * 强制止损线
      */
-    private final double stopLossLine = -0.05;
+    private final double stopLossLine = -0.045;
 
     @NotNull
     private static BigDecimal getUplRatio(PositionRisk positionRisk) {
