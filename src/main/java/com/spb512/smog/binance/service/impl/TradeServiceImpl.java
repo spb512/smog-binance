@@ -84,6 +84,14 @@ public class TradeServiceImpl implements TradeService {
      */
     private double activateRange = 2;
     /**
+     * 高极值
+     */
+    private double extremumHighRsi12 = 90;
+    /**
+     * 低极值
+     */
+    private double extremumLowRsi12 = 10;
+    /**
      * 做多
      */
     private boolean doBuy = false;
@@ -122,7 +130,7 @@ public class TradeServiceImpl implements TradeService {
     /**
      * 强制止损线
      */
-    private final double stopLossLine = -0.045;
+    private final double stopLossLine = -0.1;
 
     @NotNull
     private static BigDecimal getUplRatio(PositionRisk positionRisk) {
@@ -188,12 +196,12 @@ public class TradeServiceImpl implements TradeService {
         IndicatorDto indicatorDto = getIndicators(candlestickList);
         double rsi12 = indicatorDto.getRsi12();
 
-        boolean highActive = (rsi12 > activateHighRsi12) && (rsi12 < (activateHighRsi12 + activateRange));
+        boolean highActive = ((rsi12 > activateHighRsi12) && (rsi12 < (activateHighRsi12 + activateRange))) || (rsi12 > extremumHighRsi12);
         if (highActive) {
             doSell = true;
         }
 
-        boolean lowActive = (rsi12 < activateLowRsi12) && (rsi12 > (activateLowRsi12 - activateRange));
+        boolean lowActive = ((rsi12 < activateLowRsi12) && (rsi12 > (activateLowRsi12 - activateRange))) || (rsi12 < extremumLowRsi12);
         if (lowActive) {
             doBuy = true;
         }
