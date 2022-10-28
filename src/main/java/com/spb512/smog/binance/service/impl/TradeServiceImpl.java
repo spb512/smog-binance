@@ -234,7 +234,7 @@ public class TradeServiceImpl implements TradeService {
             }
             //计算开仓数量
             BigDecimal currentPrice = candlestickList.get(candlestickList.size() - 1).getClose();
-            BigDecimal quantity = availableBalance.divide(currentPrice, 3, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(leverage)).multiply(BigDecimal.valueOf(0.7));
+            BigDecimal quantity = availableBalance.divide(currentPrice, 3, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(leverage)).multiply(BigDecimal.valueOf(0.618));
             logger.info("当前价格:{};下单数量{};当前rsi12指标:{}", currentPrice, quantity, rsi12);
             //下单
             OrderSide sid = OrderSide.BUY;
