@@ -115,18 +115,18 @@ public class TradeServiceImpl implements TradeService {
      * 最大数量
      */
     private String maxQty;
-//    /**
-//     * 最高盈利率
-//     */
-//    private BigDecimal highestUplRatio = BigDecimal.ZERO;
+    /**
+     * 最高盈利率
+     */
+    private BigDecimal highestUplRatio = BigDecimal.ZERO;
     /**
      * 收益率激活
      */
     private final double activateRatio = 0.0618;
-//    /**
-//     * 回调收益率
-//     */
-//    private final double pullbackRatio = 0.001;
+    /**
+     * 回调收益率
+     */
+    private final double pullbackRatio = 0.001;
     /**
      * 强制止损线
      */
@@ -267,11 +267,11 @@ public class TradeServiceImpl implements TradeService {
         }
         PositionRisk positionRisk = positionRiskList.get(0);
         BigDecimal uplRatio = getUplRatio(positionRisk);
-//        if ((uplRatio.compareTo(BigDecimal.valueOf(activateRatio)) > -1) && (uplRatio.compareTo(highestUplRatio) > 0)) {
-//            highestUplRatio = uplRatio;
-//            logger.info("highestUplRatio更新，当前为:{}", highestUplRatio);
-//        }
-        if (uplRatio.compareTo(BigDecimal.valueOf(activateRatio)) > -1) {
+        if ((uplRatio.compareTo(BigDecimal.valueOf(activateRatio)) > -1) && (uplRatio.compareTo(highestUplRatio) > 0)) {
+            highestUplRatio = uplRatio;
+            logger.info("highestUplRatio更新，当前为:{}", highestUplRatio);
+        }
+        if ((highestUplRatio.compareTo(BigDecimal.valueOf(activateRatio)) > -1) && (uplRatio.compareTo(highestUplRatio.subtract(BigDecimal.valueOf(pullbackRatio))) < 1)) {
             sell(positionRisk, uplRatio);
         }
     }
@@ -309,7 +309,7 @@ public class TradeServiceImpl implements TradeService {
             direction = "做空";
         }
         Order order = privateClient.postOrder(symbolNam, side, null, OrderType.MARKET, null, positionAmt.abs().toString(), null, null, null, null, null, null, null, null, null, NewOrderRespType.RESULT);
-//        highestUplRatio = BigDecimal.ZERO;
+        highestUplRatio = BigDecimal.ZERO;
         if (order.getOrderId() != null) {
             isPosition = false;
             //查询更新余额变量
