@@ -122,7 +122,7 @@ public class TradeServiceImpl implements TradeService {
     /**
      * 收益率激活
      */
-    private final double activateRatio = 0.0618;
+    private final double activateRatio = 0.0512;
     /**
      * 回调收益率
      */
