@@ -293,9 +293,6 @@ public class TradeServiceImpl implements TradeService {
         if (uplRatio.compareTo(BigDecimal.valueOf(stopLossLine)) < 0) {
             logger.info("达到强制止损线{}%", stopLossLine * 100);
             sell(positionRisk, uplRatio);
-            //暂停
-            skipNum = 300;
-            logger.info("暂停{}秒", skipNum);
         }
     }
 
