@@ -293,8 +293,8 @@ public class TradeServiceImpl implements TradeService {
         if (uplRatio.compareTo(BigDecimal.valueOf(stopLossLine)) < 0) {
             logger.info("达到强制止损线{}%", stopLossLine * 100);
             sell(positionRisk, uplRatio);
-            //暂停15分钟
-            skipNum = 900;
+            //暂停
+            skipNum = 300;
             logger.info("暂停{}秒", skipNum);
         }
     }
@@ -318,7 +318,9 @@ public class TradeServiceImpl implements TradeService {
             getBalance();
             logger.info("开仓均价:{};当前价格:{};当前收益率:{}", positionRisk.getEntryPrice(), positionRisk.getMarkPrice(), uplRatio);
             logger.info("平{}仓成功,订单号ordId:{};当前余额:{}", direction, order.getOrderId(), availableBalance);
-            logger.info("<=====================分隔符=======================>");
+            //暂停
+            skipNum = 300;
+            logger.info("暂停{}秒<=====================分隔符=======================>", skipNum);
         }
     }
 
