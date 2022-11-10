@@ -316,7 +316,7 @@ public class TradeServiceImpl implements TradeService {
             logger.info("开仓均价:{};当前价格:{};当前收益率:{}", positionRisk.getEntryPrice(), positionRisk.getMarkPrice(), uplRatio);
             logger.info("平{}仓成功,订单号ordId:{};当前余额:{}", direction, order.getOrderId(), availableBalance);
             //暂停
-            skipNum = 900;
+            skipNum = 1800;
             logger.info("暂停{}秒<=====================分隔符=======================>", skipNum);
         }
     }
