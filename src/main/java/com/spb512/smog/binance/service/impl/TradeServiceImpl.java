@@ -74,11 +74,11 @@ public class TradeServiceImpl implements TradeService {
     /**
      * rsi12做空激活点
      */
-    private double activateHighRsi12 = 83;
+    private double activateHighRsi12 = 84;
     /**
      * rsi12做多激活点
      */
-    private double activateLowRsi12 = 17;
+    private double activateLowRsi12 = 16;
 //    /**
 //     * 最高做空点
 //     */
@@ -130,7 +130,7 @@ public class TradeServiceImpl implements TradeService {
     /**
      * 强制止损线
      */
-    private final double stopLossLine = -0.05;
+    private final double stopLossLine = -0.04;
     /**
      * 跳过num
      */
