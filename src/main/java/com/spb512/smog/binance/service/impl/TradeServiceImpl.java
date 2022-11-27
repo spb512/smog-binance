@@ -16,13 +16,12 @@ import com.spb512.smog.binance.dto.IndicatorDto;
 import com.spb512.smog.binance.service.TradeService;
 import com.spb512.smog.binance.talib.FinStratEntity;
 import com.spb512.smog.binance.talib.FinStratModel;
-import org.jetbrains.annotations.NotNull;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -36,6 +35,42 @@ import java.util.Map;
  */
 @Service
 public class TradeServiceImpl implements TradeService {
+    /**
+     * 交易对
+     */
+    private final String symbolNam = "BTCUSDT";
+    /**
+     * 杠杆倍数
+     */
+    private final Integer leverage = 10;
+    /**
+     * 保证金模式：逐仓或全仓
+     */
+    private final MarginType marginType = MarginType.ISOLATED;
+    /**
+     * rsi12做空激活点
+     */
+    private final double activateHighRsi12 = 84;
+    /**
+     * rsi12做多激活点
+     */
+    private final double activateLowRsi12 = 16;
+    /**
+     * 最小开仓资金
+     */
+    private final BigDecimal minStartup = BigDecimal.valueOf(10);
+    /**
+     * 收益率激活
+     */
+    private final double activateRatio = 0.0512;
+    /**
+     * 回调收益率
+     */
+    private final double pullbackRatio = 0.001;
+    /**
+     * 强制止损线
+     */
+    private final double stopLossLine = -0.04;
     Logger logger = LoggerFactory.getLogger(getClass());
     /**
      * 时间间隔
@@ -46,39 +81,13 @@ public class TradeServiceImpl implements TradeService {
      */
     Integer limit = 250;
     /**
+     * 收盘价数组
+     */
+    private final double[] dClose = new double[limit];
+    /**
      * 持仓模式："true": 双向持仓模式；"false": 单向持仓模式
      */
     String dual = "false";
-    @Resource
-    private GetClient getClient;
-    @Resource
-    private FinStratModel finModel;
-    private SyncRequestClient publicClient;
-    private SyncRequestClient privateClient;
-    /**
-     * 交易对
-     */
-    private String symbolNam = "BTCUSDT";
-    /**
-     * 杠杆倍数
-     */
-    private Integer leverage = 10;
-    /**
-     * 保证金模式：逐仓或全仓
-     */
-    private MarginType marginType = MarginType.ISOLATED;
-    /**
-     * 收盘价数组
-     */
-    private double[] dClose = new double[limit];
-    /**
-     * rsi12做空激活点
-     */
-    private double activateHighRsi12 = 84;
-    /**
-     * rsi12做多激活点
-     */
-    private double activateLowRsi12 = 16;
 //    /**
 //     * 最高做空点
 //     */
@@ -91,6 +100,12 @@ public class TradeServiceImpl implements TradeService {
 //     * 回调幅度
 //     */
 //    private double pullbackRsi = 0.01;
+    @Resource
+    private GetClient getClient;
+    @Resource
+    private FinStratModel finModel;
+    private SyncRequestClient publicClient;
+    private SyncRequestClient privateClient;
     /**
      * 做多
      */
@@ -104,10 +119,6 @@ public class TradeServiceImpl implements TradeService {
      */
     private boolean isPosition = false;
     /**
-     * 最小开仓资金
-     */
-    private BigDecimal minStartup = BigDecimal.valueOf(10);
-    /**
      * 可用余额
      */
     private BigDecimal availableBalance;
@@ -120,29 +131,16 @@ public class TradeServiceImpl implements TradeService {
      */
     private BigDecimal highestUplRatio = BigDecimal.ZERO;
     /**
-     * 收益率激活
-     */
-    private final double activateRatio = 0.0512;
-    /**
-     * 回调收益率
-     */
-    private final double pullbackRatio = 0.001;
-    /**
-     * 强制止损线
-     */
-    private final double stopLossLine = -0.04;
-    /**
      * 跳过num
      */
     private int skipNum = 0;
 
-    @NotNull
+
     private static BigDecimal getUplRatio(PositionRisk positionRisk) {
         BigDecimal unrealizedProfit = positionRisk.getUnrealizedProfit();
         BigDecimal isolatedMargin = new BigDecimal(positionRisk.getIsolatedMargin());
         BigDecimal isolated = isolatedMargin.subtract(unrealizedProfit);
-        BigDecimal uplRatio = unrealizedProfit.divide(isolated, 16, RoundingMode.HALF_UP);
-        return uplRatio;
+        return unrealizedProfit.divide(isolated, 16, RoundingMode.HALF_UP);
     }
 
     @PostConstruct
@@ -196,7 +194,7 @@ public class TradeServiceImpl implements TradeService {
             return;
         }
         //是否跳过
-        if(skipNum > 0){
+        if (skipNum > 0) {
             skipNum--;
             return;
         }
@@ -296,7 +294,7 @@ public class TradeServiceImpl implements TradeService {
         }
     }
 
-    private void sell(@NotNull PositionRisk positionRisk, BigDecimal uplRatio) {
+    private void sell(PositionRisk positionRisk, BigDecimal uplRatio) {
         BigDecimal positionAmt = positionRisk.getPositionAmt();
         OrderSide side;
         String direction;
@@ -321,7 +319,6 @@ public class TradeServiceImpl implements TradeService {
         }
     }
 
-    @NotNull
     private IndicatorDto getIndicators(List<Candlestick> candlestickList) {
         for (int i = 0; i < candlestickList.size(); i++) {
             dClose[i] = candlestickList.get(i).getClose().doubleValue();

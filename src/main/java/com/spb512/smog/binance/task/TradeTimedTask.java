@@ -2,6 +2,7 @@ package com.spb512.smog.binance.task;
 
 import com.binance.client.exception.BinanceApiException;
 import com.spb512.smog.binance.service.TradeService;
+import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -10,7 +11,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 
 /**
  * 交易定时任务
